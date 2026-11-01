@@ -3,9 +3,10 @@
 Claude Code tooling (slash commands, subagents, skills) kept in git, so a
 Conductor cloud workspace or a new machine can install it at session start.
 
-It ships tooling only: no wiki pages and no per-repo or per-organization context.
-Those stay on the machine that wrote them. The shipped `CLAUDE.md` holds tooling
-pointers only.
+It ships tooling only: no wiki pages and no organization context. Those stay on
+the machine that wrote them. The shipped `CLAUDE.md` holds tooling pointers only.
+Per-repo adapters under `cursor/repos/` hold launch mechanics only and read every
+value (hosts, IDs, settings) from the target repo at run time.
 
 ## Layout
 
@@ -18,6 +19,7 @@ pointers only.
 | `home/CLAUDE.md`        | `~/.claude/CLAUDE.md`           | global-engineering defaults, beads as the tracker when `bd where` resolves, pstack model choices; an include stub goes to `$CLAUDE_CONFIG_DIR/CLAUDE.md` when that dir differs |
 | `agent-shared/docs/`    | `~/.agent-shared/docs/`         | the workflow docs that commands, skills and agents read     |
 | `agent-shared/wiki/SCHEMA.md` | `~/.agent-shared/wiki/`   | page format for `/synthesize-learnings`; the wiki itself is not shipped |
+| `cursor/`               | `~/.agent-bootstrap/cursor/` on a Cursor cloud agent | one agent per work item: [`item-agent.md`](cursor/item-agent.md) (the agent's contract), [`orchestrator.md`](cursor/orchestrator.md) (setup, Cloud Agents API, integration), `install.sh`/`start.sh` (each agent gets its own PostgreSQL), `repos/<owner>__<repo>/` (adapter, notes, launchers) |
 
 `install.sh` also:
 
@@ -69,6 +71,7 @@ those dirs into this repo, then commits and pushes.
 
 The sync never copies wiki pages or `skills/iterate/repos/*` configs, and it does
 not mirror the Mac's `~/.claude/CLAUDE.md`: edit `home/CLAUDE.md` in this repo.
+`cursor/` is not mirrored either; edit it here.
 Put regexes for names that must never ship (clients, hostnames, tenants) in a
 local `.sync-deny` file, one per line. The file is gitignored. If any synced file
 matches, the sync stops before committing.

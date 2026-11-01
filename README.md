@@ -3,8 +3,9 @@
 Claude Code tooling (slash commands, subagents, skills) kept in git, so a
 Conductor cloud workspace or a new machine can install it at session start.
 
-It ships tooling only. There is no `CLAUDE.md`, no wiki pages, and no per-repo or
-per-organization context. Those stay on the machine that wrote them.
+It ships tooling only: no wiki pages and no per-repo or per-organization context.
+Those stay on the machine that wrote them. The shipped `CLAUDE.md` holds tooling
+pointers only.
 
 ## Layout
 
@@ -14,6 +15,7 @@ per-organization context. Those stay on the machine that wrote them.
 | `agents/`               | `$CLAUDE_CONFIG_DIR/agents`     | subagents that `/ship` and the review/refactor flows delegate to |
 | `skills/`               | `$CLAUDE_CONFIG_DIR/skills`     | skills (symlinks into `~/.agents/skills` are materialized)  |
 | `workflows/`            | `$CLAUDE_CONFIG_DIR/workflows`  | Workflow scripts                                            |
+| `home/CLAUDE.md`        | `~/.claude/CLAUDE.md`           | global-engineering defaults, beads as the tracker when `bd where` resolves, pstack model choices; an include stub goes to `$CLAUDE_CONFIG_DIR/CLAUDE.md` when that dir differs |
 | `agent-shared/docs/`    | `~/.agent-shared/docs/`         | the workflow docs that commands, skills and agents read     |
 | `agent-shared/wiki/SCHEMA.md` | `~/.agent-shared/wiki/`   | page format for `/synthesize-learnings`; the wiki itself is not shipped |
 
@@ -65,7 +67,8 @@ Edit `~/.claude/{commands,agents,skills,workflows}` or the docs in
 `~/.agent-shared/docs` on the Mac, then run `./sync-from-mac.sh`. It mirrors
 those dirs into this repo, then commits and pushes.
 
-The sync never copies `CLAUDE.md`, wiki pages, or `skills/iterate/repos/*` configs.
+The sync never copies wiki pages or `skills/iterate/repos/*` configs, and it does
+not mirror the Mac's `~/.claude/CLAUDE.md`: edit `home/CLAUDE.md` in this repo.
 Put regexes for names that must never ship (clients, hostnames, tenants) in a
 local `.sync-deny` file, one per line. The file is gitignored. If any synced file
 matches, the sync stops before committing.

@@ -6,7 +6,8 @@
 #   ~/.agent-shared/docs/<$SHARED_DOCS>.md         -> agent-shared/docs/
 #   ~/.agent-shared/wiki/SCHEMA.md                 -> agent-shared/wiki/
 #
-# Only tooling ships: no CLAUDE.md, no wiki pages, no per-repo iterate configs.
+# Only tooling ships: no wiki pages, no per-repo iterate configs. home/CLAUDE.md is
+# edited here, not mirrored: the Mac's ~/.claude/CLAUDE.md carries org-specific lines.
 # Before committing, the tree is checked against the regexes in .sync-deny
 # (gitignored, one per line); any match aborts the sync.
 set -euo pipefail
@@ -19,7 +20,7 @@ SHARED="${AGENT_SHARED_DIR:-$HOME/.agent-shared}"
 DIRS="commands agents skills workflows"
 
 # The ~/.agent-shared/docs files that commands, skills and agents read.
-SHARED_DOCS="global-engineering merge-workflow conduct-map-workflow changeset-report-workflow synthesize-learnings spec-workflow refactor-workflow implement-plan-workflow review-workflow beads-issue-tracker"
+SHARED_DOCS="global-engineering merge-workflow conduct-map-workflow changeset-report-workflow synthesize-learnings spec-workflow refactor-workflow implement-plan-workflow review-workflow beads-issue-tracker pstack-models"
 
 # Plugins whose skills get a /<plugin>-<skill> command file, so they show up in
 # Conductor's slash menu (it lists command files, not plugin skills).
@@ -102,7 +103,7 @@ if [ -z "$(git status --porcelain)" ]; then
 fi
 
 # grep exits 2 on a missing path even when it matched, so pass only dirs that exist.
-synced="$(for d in $DIRS agent-shared; do [ -d "$d" ] && echo "$d"; done)"
+synced="$(for d in $DIRS agent-shared home; do [ -d "$d" ] && echo "$d"; done)"
 if [ -s "$REPO/.sync-deny" ] && grep -rIinE -f "$REPO/.sync-deny" $synced; then
   echo "sync-from-mac: the lines above match .sync-deny; scrub them on the Mac and rerun. Nothing committed." >&2
   exit 1

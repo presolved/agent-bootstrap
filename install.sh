@@ -5,6 +5,7 @@
 # .claude/settings.local.json, so it runs on every cloud session start.
 #
 #   commands agents skills workflows -> $CLAUDE_CONFIG_DIR/<dir>
+#   home/CLAUDE.md                   -> ~/.claude/CLAUDE.md  (+ include stub in $CLAUDE_CONFIG_DIR)
 #   agent-shared/                    -> ~/.agent-shared/  (workflow docs the skills read, wiki schema)
 #   bd (beads) $BD_VERSION           -> ~/.local/bin/bd (+ /usr/local/bin/bd), then bootstrap or
 #                                       pull the repo's beads database when origin carries refs/dolt/data
@@ -92,15 +93,27 @@ install_config_dirs() {
   mv "$new_manifest" "$MANIFEST"
 }
 
-# --- Shared workflow docs --------------------------------------------------
-# Commands, skills and agents read ~/.agent-shared/docs/*.md; synthesize-learnings
-# reads ~/.agent-shared/wiki/SCHEMA.md. Only those files ship; the wiki's pages
-# stay on the machine that wrote them.
-install_shared_docs() {
-  [ -d "$SRC/agent-shared" ] || return 0
-  mkdir -p "$HOME/.agent-shared"
-  cp -R "$SRC/agent-shared/." "$HOME/.agent-shared/" || return 1
-  echo "install.sh: agent-shared -> $HOME/.agent-shared"
+# --- Home instructions and shared workflow docs ----------------------------
+# home/CLAUDE.md holds tooling pointers only (global-engineering, beads, pstack
+# models), installed at ~/.claude/CLAUDE.md; a config dir other than ~/.claude
+# gets an include stub. Commands, skills and agents read ~/.agent-shared/docs/*.md;
+# synthesize-learnings reads ~/.agent-shared/wiki/SCHEMA.md. The wiki's pages stay
+# on the machine that wrote them.
+install_home_and_docs() {
+  if [ -f "$SRC/home/CLAUDE.md" ]; then
+    mkdir -p "$HOME/.claude"
+    cp "$SRC/home/CLAUDE.md" "$HOME/.claude/CLAUDE.md" || return 1
+    echo "install.sh: CLAUDE.md -> $HOME/.claude/CLAUDE.md"
+    if [ "$DEST" != "$HOME/.claude" ] && [ ! -f "$DEST/CLAUDE.md" ]; then
+      printf '# Personal account config\n\nThis config directory uses the canonical global instructions.\n\n@~/.claude/CLAUDE.md\n' > "$DEST/CLAUDE.md"
+      echo "install.sh: include stub -> $DEST/CLAUDE.md"
+    fi
+  fi
+  if [ -d "$SRC/agent-shared" ]; then
+    mkdir -p "$HOME/.agent-shared"
+    cp -R "$SRC/agent-shared/." "$HOME/.agent-shared/" || return 1
+    echo "install.sh: agent-shared -> $HOME/.agent-shared"
+  fi
 }
 
 # --- beads (bd) -------------------------------------------------------------
@@ -215,7 +228,7 @@ install_plugins() {
 }
 
 install_config_dirs || warn "config dirs step failed"
-install_shared_docs || warn "shared docs step failed"
+install_home_and_docs || warn "home instructions and docs step failed"
 setup_beads         || warn "beads step failed"
 install_plugins     || warn "plugins step failed"
 echo "install.sh: done."

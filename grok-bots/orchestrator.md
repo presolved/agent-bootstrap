@@ -4,14 +4,19 @@
 > never reads this page; its instructions are
 > [`cursor-agents/item-agent.md`](../cursor-agents/item-agent.md).
 
-The orchestrator splits work into items and starts one
-Cursor cloud agent per item through the Cloud Agents API. Each agent gets its
-own VM, branch, database, and app, so items never share a server or a
-database. The agent's side of the contract is
+The orchestrator splits work into items and starts one Cursor cloud agent per
+item with Grok Bot's built-in **CloudAgent** tool. Each agent gets its own VM,
+branch, database, and app, so items never share a server or a database. The
+agent's side of the contract is
 [item-agent.md](../cursor-agents/item-agent.md), which the orchestrator sends
 in every prompt.
 
 This page is the workflow. Everything specific to one repo lives in that repo.
+
+Do **not** launch agents through `https://api.cursor.com/v1/agents` or a
+`CURSOR_API_KEY`. That path is banned for this fleet (API creates are checked
+against prepaid credit even when weekly included usage remains). Use CloudAgent
+only.
 
 ## What a repo provides
 
@@ -26,58 +31,67 @@ This page is the workflow. Everything specific to one repo lives in that repo.
 
 ## One-time setup, per repo
 
-1. Cloud Agents on the Cursor plan, with read-write access to the repo.
-2. The secrets the repo's notes list, in Cloud Agents → Secrets, scoped to the
-   repo.
-3. A Cursor API key for the orchestrator (Dashboard → API Keys, or a service
-   account key).
+1. Cloud Agents on the Cursor plan, with the Cursor GitHub app granted
+   read-write access to the repo (public alone is not enough).
+2. The secrets the repo's notes list, in Cloud Agents → Secrets (or a saved
+   environment that already has them), scoped so the agent can run Claude Code
+   / real-service checks. Prefer `CLAUDE_CODE_OAUTH_TOKEN` on Patrice's Claude
+   plan; never API-key billing for the coding work.
+3. Grok Bot CloudAgent tool available to the orchestrator bot (no separate
+   Cursor API key for launches).
 
-Do not save a dashboard environment for the repo: a saved environment takes
-precedence over the repo's `.cursor/environment.json`.
+Do not save a dashboard environment for the repo unless you need it for
+secrets: a saved environment takes precedence over the repo's
+`.cursor/environment.json`.
 
 ## Per item
 
-**Start.** `POST https://api.cursor.com/v1/agents`, authenticated with the key
-as the Basic auth username (`-u "$CURSOR_API_KEY:"`) or a Bearer token:
+**Start.** Call CloudAgent `launch` with:
 
-```json
-{
-  "name": "<item slug>",
-  "prompt": {
-    "text": "<item-agent.md, verbatim>\n\n---\n\nRepo notes: <path from the repo's AGENTS.md>\nItem: <slug>\nBrief: <the user's words verbatim>\nDone when: <what the user sees in the app>\nKnown files: <paths, if any>"
-  },
-  "repos": [
-    {
-      "url": "https://github.com/<owner>/<repo>",
-      "startingRef": "<integration branch>"
-    }
-  ],
-  "autoCreatePR": false
-}
+- `repo`: the full GitHub URL (e.g. `https://github.com/<owner>/<repo>`)
+- `starting_ref`: the integration branch
+- `title`: the item slug (optional but useful)
+- `secret_names`: whatever the repo notes need (often
+  `["CLAUDE_CODE_OAUTH_TOKEN"]`) when forwarding is enabled; otherwise use a
+  saved environment that already holds those secrets
+- `prompt`: `cursor-agents/item-agent.md` from this repo's `main`, **verbatim**,
+  then a separator and the item fields:
+
+```text
+<item-agent.md, verbatim>
+
+---
+
+Repo notes: <path from the repo's AGENTS.md>
+Item: <slug>
+Brief: <the user's words verbatim>
+Done when: <what the user sees in the app>
+Known files: <paths, if any>
 ```
 
-Send `cursor-agents/item-agent.md` as it is on this repo's `main`. Put anything specific to the
-item in the brief, not in an edited copy of the contract.
+Put anything specific to the item in the brief, not in an edited copy of the
+contract. Omit CloudAgent `model` unless the user asked for an override; Claude
+Code inside the agent follows the fleet defaults (e.g. opus + high) when it
+runs `claude`.
 
-Keep `agent.id` (`bc-…`) and `run.id` (`run-…`) from the response. Omit `model`
-to use the team default, or pass an id from `GET /v1/models`.
+Keep the returned agent id (`bc-…`) and the cursor.com agent URL.
 
-**Watch.** `GET /v1/agents/{id}/runs/{runId}` until `status` is `FINISHED`,
-`ERROR`, `CANCELLED`, or `EXPIRED`, or stream
-`GET /v1/agents/{id}/runs/{runId}/stream`. v1 has no webhooks yet. On
-`FINISHED`, parse the report block at the end of `result`, and take the pushed
-branch from `git.branches[].branch`.
+**Watch.** Prefer CloudAgent revival when the run finishes. While it is still
+open, hang-watch with CloudAgent `get` at least every 10 minutes. On
+completion, parse the report block at the end of the agent's result and take
+the pushed branch from the agent status / PR metadata.
 
-**Follow up.** `POST /v1/agents/{id}/runs` with `{ "prompt": { "text": "…" } }`
-sends review fixes to the same agent and branch. While a run is active, the API
-answers `409 agent_busy`; add `"delivery": "steer"` to add the message to the
-running turn instead.
+**Follow up.** CloudAgent `reply` on the same `bc-…` agent. Use `steer` to
+inject into a running turn; use `queue` when the current run should finish
+first; use `interrupt` only when the user asked to stop or restart in-flight
+work.
 
-**Finish.** `POST /v1/agents/{id}/archive` once the branch is merged.
+**Finish.** CloudAgent `archive` once the branch is merged (or the item is
+discarded). `cancel` if the run must stop without merging.
 
 ## Integration
 
-- Start every item from one integration branch (`startingRef`), and merge
+- Start every item from one integration branch (`starting_ref`), and merge
   `READY` branches into it yourself. An agent never merges.
 - On a conflict, send the agent a follow-up: "Merge `<integration branch>` into
   your branch, resolve the conflicts, re-run the checks and verification, and
@@ -97,6 +111,6 @@ branch for review.
 
 ## Reference
 
-- [Cloud Agents API endpoints](https://cursor.com/docs/cloud-agent/api/endpoints)
-- [Cloud environment setup](https://cursor.com/docs/cloud-agent/setup)
 - [Cloud Agents](https://cursor.com/docs/cloud-agent)
+- [Cloud environment setup](https://cursor.com/docs/cloud-agent/setup)
+- Item contract: [cursor-agents/item-agent.md](../cursor-agents/item-agent.md)

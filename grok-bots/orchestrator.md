@@ -1,10 +1,15 @@
 # Orchestrating Cursor cloud agents: one agent per item
 
-An orchestrator (a bot or a person) splits work into items and starts one
+> **For grok bots** (or a person) orchestrating the work. A Cursor cloud agent
+> never reads this page; its instructions are
+> [`cursor-agents/item-agent.md`](../cursor-agents/item-agent.md).
+
+The orchestrator splits work into items and starts one
 Cursor cloud agent per item through the Cloud Agents API. Each agent gets its
 own VM, branch, database, and app, so items never share a server or a
-database. The agent's side of the contract is [item-agent.md](./item-agent.md),
-which the orchestrator sends in every prompt.
+database. The agent's side of the contract is
+[item-agent.md](../cursor-agents/item-agent.md), which the orchestrator sends
+in every prompt.
 
 This page is the workflow. Everything specific to one repo lives in that repo.
 
@@ -51,7 +56,7 @@ as the Basic auth username (`-u "$CURSOR_API_KEY:"`) or a Bearer token:
 }
 ```
 
-Send item-agent.md as it is on this repo's `main`. Put anything specific to the
+Send `cursor-agents/item-agent.md` as it is on this repo's `main`. Put anything specific to the
 item in the brief, not in an edited copy of the contract.
 
 Keep `agent.id` (`bc-…`) and `run.id` (`run-…`) from the response. Omit `model`

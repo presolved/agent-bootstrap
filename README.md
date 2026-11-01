@@ -19,7 +19,8 @@ in that repo.
 | `home/CLAUDE.md`        | `~/.claude/CLAUDE.md`           | global-engineering defaults, beads as the tracker when `bd where` resolves, pstack model choices; an include stub goes to `$CLAUDE_CONFIG_DIR/CLAUDE.md` when that dir differs |
 | `agent-shared/docs/`    | `~/.agent-shared/docs/`         | the workflow docs that commands, skills and agents read     |
 | `agent-shared/wiki/SCHEMA.md` | `~/.agent-shared/wiki/`   | page format for `/synthesize-learnings`; the wiki itself is not shipped |
-| `cursor/`               | not installed; the orchestrator reads it | one Cursor cloud agent per work item: [`item-agent.md`](cursor/item-agent.md) (the agent's contract, sent in each prompt), [`orchestrator.md`](cursor/orchestrator.md) (repo setup, Cloud Agents API, integration) |
+| `grok-bots/`            | not installed; for the orchestrating bot | [`orchestrator.md`](grok-bots/orchestrator.md): one Cursor cloud agent per work item (what a repo provides, one-time setup, Cloud Agents API, integration) |
+| `cursor-agents/`        | not installed; sent in each agent's prompt | [`item-agent.md`](cursor-agents/item-agent.md): the Cursor cloud agent's contract (scope, branch rules, report block) |
 
 `install.sh` also:
 
@@ -71,7 +72,7 @@ those dirs into this repo, then commits and pushes.
 
 The sync never copies wiki pages or `skills/iterate/repos/*` configs, and it does
 not mirror the Mac's `~/.claude/CLAUDE.md`: edit `home/CLAUDE.md` in this repo.
-`cursor/` is not mirrored either; edit it here.
+`grok-bots/` and `cursor-agents/` are not mirrored either; edit them here.
 Put regexes for names that must never ship (clients, hostnames, tenants) in a
 local `.sync-deny` file, one per line. The file is gitignored. If any synced file
 matches, the sync stops before committing.

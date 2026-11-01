@@ -5,8 +5,8 @@ Conductor cloud workspace or a new machine can install it at session start.
 
 It ships tooling only: no wiki pages and no organization context. Those stay on
 the machine that wrote them. The shipped `CLAUDE.md` holds tooling pointers only.
-Per-repo adapters under `cursor/repos/` hold launch mechanics only and read every
-value (hosts, IDs, settings) from the target repo at run time.
+Anything specific to one repo (its environment, scripts, checks, secrets) lives
+in that repo.
 
 ## Layout
 
@@ -19,7 +19,7 @@ value (hosts, IDs, settings) from the target repo at run time.
 | `home/CLAUDE.md`        | `~/.claude/CLAUDE.md`           | global-engineering defaults, beads as the tracker when `bd where` resolves, pstack model choices; an include stub goes to `$CLAUDE_CONFIG_DIR/CLAUDE.md` when that dir differs |
 | `agent-shared/docs/`    | `~/.agent-shared/docs/`         | the workflow docs that commands, skills and agents read     |
 | `agent-shared/wiki/SCHEMA.md` | `~/.agent-shared/wiki/`   | page format for `/synthesize-learnings`; the wiki itself is not shipped |
-| `cursor/`               | `~/.agent-bootstrap/cursor/` on a Cursor cloud agent | one agent per work item: [`item-agent.md`](cursor/item-agent.md) (the agent's contract), [`orchestrator.md`](cursor/orchestrator.md) (setup, Cloud Agents API, integration), `install.sh`/`start.sh` (each agent gets its own PostgreSQL), `repos/<owner>__<repo>/` (adapter, notes, launchers) |
+| `cursor/`               | not installed; the orchestrator reads it | one Cursor cloud agent per work item: [`item-agent.md`](cursor/item-agent.md) (the agent's contract, sent in each prompt), [`orchestrator.md`](cursor/orchestrator.md) (repo setup, Cloud Agents API, integration) |
 
 `install.sh` also:
 

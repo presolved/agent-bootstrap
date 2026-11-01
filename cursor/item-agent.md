@@ -5,19 +5,18 @@ work**. The brief in your prompt is the whole scope. Other agents work other
 items at the same time, each on its own machine and branch, and the
 orchestrator merges the results. This page is your contract.
 
-Your prompt also names the repo's notes,
-`~/.agent-bootstrap/cursor/repos/<owner>__<repo>/NOTES.md`. Read them before
-you start. They say how this repo checks and verifies a change. The repo's own
-`AGENTS.md` (and `CLAUDE.md` or constitution, when present) apply to everything
-you write and win over this page where they conflict.
+The repo has its own cloud-agent notes. Your prompt names them; if it does
+not, the repo's `AGENTS.md` links them. Read them before you start. They say how
+this repo prepares the machine, checks a change, and verifies it in the app. The
+repo's own `AGENTS.md` (and `CLAUDE.md` or constitution, when present) apply to
+everything you write and win over this page where they conflict.
 
 ## Your machine
 
-The environment's install step ran `~/.agent-bootstrap/cursor/install.sh`.
-Before your first check, run `bash ~/.agent-bootstrap/cursor/start.sh` from the
-repo root. It is idempotent: it starts this machine's own PostgreSQL and creates
-the repo's databases, or reports that it already did. Nothing on this machine is
-shared with another agent except the real external services the notes name.
+The machine is yours alone: its database and app are not shared with another
+agent. Only the real external services the notes name are shared. Before your
+first check, run the start step the notes name, even if the environment already
+ran it; it is safe to repeat.
 
 ## Rules
 

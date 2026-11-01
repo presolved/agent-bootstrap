@@ -2,41 +2,33 @@
 
 An orchestrator (a bot or a person) splits work into items and starts one
 Cursor cloud agent per item through the Cloud Agents API. Each agent gets its
-own VM, branch, PostgreSQL, and app, so items never share a server or a
-database. The agent side of the contract is [item-agent.md](./item-agent.md),
-plus the repo's notes in `repos/<owner>__<repo>/NOTES.md`.
+own VM, branch, database, and app, so items never share a server or a
+database. The agent's side of the contract is [item-agent.md](./item-agent.md),
+which the orchestrator sends in every prompt.
 
-Nothing has to be committed to the target repo. The environment lives in the
-Cursor dashboard, and a saved environment takes precedence over a repo's
-`.cursor/environment.json`.
+This page is the workflow. Everything specific to one repo lives in that repo.
+
+## What a repo provides
+
+- **A committed `.cursor/environment.json`** whose `install` step installs the
+  repo's dependencies and whose `start` step starts its services. Both must be
+  idempotent. A repo with background workers gives each agent its own database:
+  two app servers on one database take each other's jobs and run them with the
+  wrong code.
+- **Cloud-agent notes**, linked from the repo's `AGENTS.md`: the start step, the
+  checks to run, how to verify in the app, and the secrets real-service mode
+  needs.
 
 ## One-time setup, per repo
 
-1. **A read token for this repo.** Create a fine-grained GitHub token with
-   read-only Contents access to `presolved/agent-bootstrap` only.
-2. **Secrets** (Cloud Agents → Secrets, scoped to the environment):
-   `AGENT_BOOTSTRAP_TOKEN` (the token above), plus the secrets the repo's
-   `NOTES.md` lists.
-3. **A saved environment** for the repo (Cloud Agents → Environments):
-
-   Install:
-
-   ```bash
-   d="$HOME/.agent-bootstrap"; if [ -d "$d/.git" ]; then git -C "$d" pull -q --ff-only; else git clone -q --depth 1 "https://x-access-token:${AGENT_BOOTSTRAP_TOKEN}@github.com/presolved/agent-bootstrap.git" "$d"; fi; bash "$d/cursor/install.sh"
-   ```
-
-   Start, if the environment offers a start command (agents also run it
-   themselves, per item-agent.md):
-
-   ```bash
-   bash "$HOME/.agent-bootstrap/cursor/start.sh"
-   ```
-
-4. **A Cursor API key** for the orchestrator (Dashboard → API Keys, or a service
+1. Cloud Agents on the Cursor plan, with read-write access to the repo.
+2. The secrets the repo's notes list, in Cloud Agents → Secrets, scoped to the
+   repo.
+3. A Cursor API key for the orchestrator (Dashboard → API Keys, or a service
    account key).
 
-The install step runs whatever is on this repo's `main` with the environment's
-secrets in scope. To pin it, check out a fixed commit after the clone.
+Do not save a dashboard environment for the repo: a saved environment takes
+precedence over the repo's `.cursor/environment.json`.
 
 ## Per item
 
@@ -47,7 +39,7 @@ as the Basic auth username (`-u "$CURSOR_API_KEY:"`) or a Bearer token:
 {
   "name": "<item slug>",
   "prompt": {
-    "text": "Follow ~/.agent-bootstrap/cursor/item-agent.md and ~/.agent-bootstrap/cursor/repos/<owner>__<repo>/NOTES.md.\n\nItem: <slug>\nBrief: <the user's words verbatim>\nDone when: <what the user sees in the app>\nKnown files: <paths, if any>"
+    "text": "<item-agent.md, verbatim>\n\n---\n\nRepo notes: <path from the repo's AGENTS.md>\nItem: <slug>\nBrief: <the user's words verbatim>\nDone when: <what the user sees in the app>\nKnown files: <paths, if any>"
   },
   "repos": [
     {
@@ -58,6 +50,9 @@ as the Basic auth username (`-u "$CURSOR_API_KEY:"`) or a Bearer token:
   "autoCreatePR": false
 }
 ```
+
+Send item-agent.md as it is on this repo's `main`. Put anything specific to the
+item in the brief, not in an edited copy of the contract.
 
 Keep `agent.id` (`bc-…`) and `run.id` (`run-…`) from the response. Omit `model`
 to use the team default, or pass an id from `GET /v1/models`.
@@ -91,11 +86,9 @@ running turn instead.
 ## Reviewing the result
 
 Each agent reports what it verified and where its evidence is. To review the
-integrated work in one app, use the repo's preview deployments, or start one
-more agent whose brief is only to serve the integration branch for review. A
-person cannot sign in to a server that an agent signed in with a synthetic
-session; a test-mode server with mock sign-in can be reviewed through the
-agent's forwarded port.
+integrated work in one app, use the repo's preview deployments (its notes say
+how), or start one more agent whose brief is only to serve the integration
+branch for review.
 
 ## Reference
 
